@@ -10,7 +10,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import android.location.Location;
@@ -52,6 +54,8 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 
 	private GoogleMap map;
 	
+	private Marker me;
+	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,25 +89,29 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
     			 */
 
     			
-    			if(!isGpsEnabled()){
-    				promptUser();
-    			}else{
-        			/**
-        			 * set location Request and client
-        			 */
-    				locationRequest = LocationRequest.create();
-    				locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-    				.setInterval(UPDATE_INTERVAL)
-    				.setFastestInterval(FASTEST_INTERVAL);
-    				
-    				locationClient = new LocationClient(this , this , this);
-    				locationClient.connect();
-
-    			}
+    			checkGPS();
 
     		}
 
     	}
+    }
+    
+    private void checkGPS(){
+			if(!isGpsEnabled()){
+				promptUser();
+			}else{
+    			/**
+    			 * set location Request and client
+    			 */
+				locationRequest = LocationRequest.create();
+				locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+				.setInterval(UPDATE_INTERVAL)
+				.setFastestInterval(FASTEST_INTERVAL);
+
+				locationClient = new LocationClient(this , this , this);
+				locationClient.connect();
+
+			}
     }
     
     private boolean isGpsEnabled(){
@@ -125,7 +133,7 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 			public void onClick(DialogInterface arg0, int arg1) {
 				// TODO Auto-generated method stub
 				Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-				startActivity(intent);
+				startActivityForResult(intent , 1);
 			}
     		
     	});
@@ -136,19 +144,42 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
     	
     }
     
+    
 
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent arg2) {
+		// TODO Auto-generated method stub
+		if(requestCode == 1){
+			checkGPS();
+		}
+		
+		super.onActivityResult(requestCode, resultCode, arg2);
+	}
 
 	@Override
 	protected void onResume() {
 		// TODO Auto-generated method stub
 		super.onResume();
 		init();
+		if(locationClient != null){
+			locationClient.connect();
+		}
 	}
 
 	@Override
 	public void onLocationChanged(Location location) {
 		// TODO Auto-generated method stub
-		Log.d("MainActivity", location.getLatitude() + " " + location.getLongitude());
+
+		if(currentLocation.getLatitude() != location.getLatitude() &&
+				currentLocation.getLongitude() != location.getLongitude()){
+			currentLocation = location;
+			Toast.makeText(this, "Location Changed!", Toast.LENGTH_LONG).show();
+			Log.d("MainActivity", location.getLatitude() + " " + location.getLongitude());
+			if(me != null){
+				me.setPosition(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()));
+			}
+		}
 	}
 
 	@Override
@@ -189,10 +220,16 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 		currentLocation = locationClient.getLastLocation();
 
 		LatLng coordinates = new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude());
-		CameraUpdate camUpdate = CameraUpdateFactory.newLatLngZoom(coordinates, 5);
+		CameraUpdate camUpdate = CameraUpdateFactory.newLatLngZoom(coordinates, 16);
 		map.animateCamera(camUpdate);
 		
 		locationClient.requestLocationUpdates(locationRequest, this);
+		 me = map.addMarker(new MarkerOptions()
+		.position(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()))
+		.icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow_marker)));
+		
+		
+		Log.d("MainActivity", "Connected");
 	}
 
 	@Override
@@ -220,12 +257,13 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 	@Override
 	protected void onStop() {
 		// TODO Auto-generated method stub
-		if(locationClient.isConnected()){
-			locationClient.removeLocationUpdates(this);
-		}
+
 		
 		super.onStop();
 		if(locationClient != null){
+			if(locationClient.isConnected()){
+				locationClient.removeLocationUpdates(this);
+			}
 			locationClient.disconnect();
 		}
 	}
