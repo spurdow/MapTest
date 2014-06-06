@@ -1,5 +1,9 @@
 package com.example.maptest;
 
+import org.w3c.dom.Document;
+
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.MenuItem;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
@@ -8,13 +12,17 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -33,8 +41,10 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.widget.Toast;
+import app.akexorcist.gdaplibrary.GoogleDirection;
+import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 
-public class MainActivity extends FragmentActivity implements GooglePlayServicesClient.ConnectionCallbacks ,
+@SuppressLint("NewApi") public class MainActivity extends SherlockFragmentActivity implements GooglePlayServicesClient.ConnectionCallbacks ,
 	GooglePlayServicesClient.OnConnectionFailedListener, LocationListener{
 	
 	private LocationRequest locationRequest;
@@ -43,9 +53,11 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 	
 	private Location currentLocation;
 	
-	private float orientation;
+	private Marker targetMark;
 	
-	private SensorManager sensorManager;
+	private GoogleDirection googleDirection;
+	
+	private Document document;
 	
     // Milliseconds per second
     private static final int MILLISECONDS_PER_SECOND = 1000;
@@ -62,7 +74,7 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 
 	private GoogleMap map;
 	
-	private Marker me;
+	private Circle me;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,23 +82,64 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
         setContentView(R.layout.activity_main);
         
         init();
-        
-		
-
-
+     
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.activity_main, menu);
-        return true;
-    }
     
-    @SuppressLint("NewApi") 
+    
+    @Override
+	public boolean onCreateOptionsMenu(com.actionbarsherlock.view.Menu menu) {
+		// TODO Auto-generated method stub
+    	this.getSupportMenuInflater().inflate(R.menu.activity_main, menu);
+		return super.onCreateOptionsMenu(menu);
+	}
+
+    
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// TODO Auto-generated method stub
+		switch(item.getItemId()){
+		case R.id.action_directions: 
+			if( targetMark != null  ){
+				googleDirection.setLogging(true);
+				googleDirection.request(new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()), targetMark.getPosition(), GoogleDirection.MODE_DRIVING);
+			}else{
+				Toast.makeText(this, "Oops!, you should find a target first", Toast.LENGTH_SHORT).show();
+			}
+			break;
+		case R.id.action_edit: map.clear();
+			if(me != null){
+				me.setCenter(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()));
+			}
+			break;
+		case R.id.action_settings: Toast.makeText(this, "No Action Created", Toast.LENGTH_LONG).show();break;
+		}
+		return super.onOptionsItemSelected(item);
+		
+	}
+
+
+
+	@SuppressLint("NewApi") 
     private void init(){
     	if(map == null){
     		map = ((SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
+    		map.setOnMapClickListener(new OnMapClickListener(){
+
+				@Override
+				public void onMapClick(LatLng arg0) {
+					// TODO Auto-generated method stub
+					if(targetMark != null){
+						targetMark.remove();
+					}
+					
+					targetMark = map.addMarker(new MarkerOptions()
+					.position(arg0));
+					//MainActivity.this.getActionBar().show();
+				}
+    			
+    		});
     		if(map == null){
     			Toast.makeText(this, "Cant get Map!", Toast.LENGTH_LONG).show();
     		}
@@ -109,13 +162,33 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 				promptUser();
 			}else{
     			/**
-    			 * set location Request and client
+    			 * set location Request and client and google direction
     			 */
+				googleDirection = new GoogleDirection(this);
+				googleDirection.setOnDirectionResponseListener(new OnDirectionResponseListener(){
+
+					@Override
+					public void onResponse(String status, Document doc,
+							GoogleDirection gd) {
+						// TODO Auto-generated method stub
+						map.addPolyline(gd.getPolyline(doc, 3, Color.BLUE));
+						map.addCircle(new CircleOptions()
+						.center(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()))
+						.radius(20)
+						.fillColor(Color.BLUE)
+						.strokeColor(Color.WHITE)
+						.strokeWidth(20));
+						
+						targetMark = map.addMarker(new MarkerOptions()
+						.position(targetMark.getPosition()));
+					}
+					
+				});
 				locationRequest = LocationRequest.create();
 				locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
 				.setInterval(UPDATE_INTERVAL)
 				.setFastestInterval(FASTEST_INTERVAL);
-				setSensor();
+
 				locationClient = new LocationClient(this , this , this);
 				locationClient.connect();
 				
@@ -173,20 +246,20 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 		if(locationClient != null){
 			locationClient.connect();
 		}
+		
+		
 	}
 
 	@Override
 	public void onLocationChanged(Location location) {
 		// TODO Auto-generated method stub
-
 		if(currentLocation.getLatitude() != location.getLatitude() &&
 				currentLocation.getLongitude() != location.getLongitude()){
 			currentLocation = location;
 			Toast.makeText(this, "Location Changed!", Toast.LENGTH_LONG).show();
 			Log.d("MainActivity", location.getLatitude() + " " + location.getLongitude());
 			if(me != null){
-				me.setRotation(orientation);
-				me.setPosition(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()));
+				me.setCenter(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()));
 			}
 		}
 	}
@@ -233,9 +306,12 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 		map.animateCamera(camUpdate);
 		
 		locationClient.requestLocationUpdates(locationRequest, this);
-		 me = map.addMarker(new MarkerOptions()
-		.position(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()))
-		.icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow_marker)));
+		 me = map.addCircle(new CircleOptions()
+		.center(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()))
+		.radius(20)
+		.fillColor(Color.BLUE)
+		.strokeColor(Color.WHITE)
+		.strokeWidth(20));
 		
 		
 		Log.d("MainActivity", "Connected");
@@ -247,26 +323,6 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 		init();
 	}
 
-	private void setSensor(){
-		sensorManager = (SensorManager) this.getApplicationContext().getSystemService(this.SENSOR_SERVICE);
-		sensorManager.registerListener(sensorListener, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),sensorManager.SENSOR_DELAY_NORMAL);
-	}
-	
-	private SensorEventListener sensorListener = new SensorEventListener(){
-
-		@Override
-		public void onAccuracyChanged(Sensor arg0, int arg1) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void onSensorChanged(SensorEvent arg0) {
-			// TODO Auto-generated method stub
-			orientation = arg0.values[0];
-		}
-		
-	};
 	
     /*
      * Define a request code to send to Google Play services
