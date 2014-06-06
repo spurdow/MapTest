@@ -15,6 +15,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -38,6 +42,10 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 	private LocationClient locationClient;
 	
 	private Location currentLocation;
+	
+	private float orientation;
+	
+	private SensorManager sensorManager;
 	
     // Milliseconds per second
     private static final int MILLISECONDS_PER_SECOND = 1000;
@@ -107,10 +115,10 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 				locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
 				.setInterval(UPDATE_INTERVAL)
 				.setFastestInterval(FASTEST_INTERVAL);
-
+				setSensor();
 				locationClient = new LocationClient(this , this , this);
 				locationClient.connect();
-
+				
 			}
     }
     
@@ -177,6 +185,7 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 			Toast.makeText(this, "Location Changed!", Toast.LENGTH_LONG).show();
 			Log.d("MainActivity", location.getLatitude() + " " + location.getLongitude());
 			if(me != null){
+				me.setRotation(orientation);
 				me.setPosition(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()));
 			}
 		}
@@ -237,6 +246,27 @@ public class MainActivity extends FragmentActivity implements GooglePlayServices
 		// TODO Auto-generated method stub
 		init();
 	}
+
+	private void setSensor(){
+		sensorManager = (SensorManager) this.getApplicationContext().getSystemService(this.SENSOR_SERVICE);
+		sensorManager.registerListener(sensorListener, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),sensorManager.SENSOR_DELAY_NORMAL);
+	}
+	
+	private SensorEventListener sensorListener = new SensorEventListener(){
+
+		@Override
+		public void onAccuracyChanged(Sensor arg0, int arg1) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onSensorChanged(SensorEvent arg0) {
+			// TODO Auto-generated method stub
+			orientation = arg0.values[0];
+		}
+		
+	};
 	
     /*
      * Define a request code to send to Google Play services
