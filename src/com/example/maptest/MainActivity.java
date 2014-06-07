@@ -23,7 +23,6 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.maps.android.ui.IconGenerator;
 
 import android.graphics.Color;
 import android.hardware.Sensor;
@@ -211,21 +210,26 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 						// TODO Auto-generated method stub
 						if(target_polyline != null){
 							target_polyline.remove();
+							
 						}
+						
+						
+						
 						target_polyline = map.addPolyline(gd.getPolyline(doc, 3, Color.BLUE));
 						
 						target_polyline.setZIndex(4);
 						
 						
-/*						me = map.addCircle(new CircleOptions()
-						.center(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()))
-						.radius(20)
-						.fillColor(Color.BLUE)
-						.strokeColor(Color.WHITE)
-						.strokeWidth(20));
+						targetMark.setTitle(gd.getEndAddress(doc));
+						targetMark.setSnippet("Distance : " + gd.getTotalDistanceText(doc) );
+						targetMark.showInfoWindow();
 						
-						targetMark = map.addMarker(new MarkerOptions()
-						.position(targetMark.getPosition()));*/
+
+						
+						
+						
+						
+
 					}
 					
 				});
@@ -294,28 +298,34 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 		
 		
 	}
-
+	private AlertDialog success;
 	@Override
 	public void onLocationChanged(Location location) {
 		// TODO Auto-generated method stub
-
-		if(currentLocation.getLatitude() != location.getLatitude() &&
-				currentLocation.getLongitude() != location.getLongitude()){
-			currentLocation = location;
-			Toast.makeText(this, "Location Changed!", Toast.LENGTH_LONG).show();
-			Log.d("MainActivity", location.getLatitude() + " " + location.getLongitude());
-			if(me != null){
-				if(current_polyline == null){
-					current_polyline = map.addPolyline(new PolylineOptions()
-					.add(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()))
-					.color(Color.RED)
-					.width(3)
-					.zIndex(5));
-				}else{
-					current_polyline.getPoints().add(new LatLng(location.getLatitude(), location.getLongitude()));
+		if(targetMark != null){
+			double distance = this.getDistanceFromLatLngInKm(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()), targetMark.getPosition() );
+		
+			double d_meter = distance * 1000;
+			//Toast.makeText(this, d_meter + " -> Distance ", Toast.LENGTH_LONG).show();
+			if(d_meter < 20){ 
+				
+				if(success == null){
+					AlertDialog.Builder builder = new AlertDialog.Builder(this);
+					success = builder.setTitle("Success!").setMessage("You've made it!")
+					.create();
+					success.show();
 				}
-				me.setCenter(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()));
+			}else{
+				if(success != null){
+					success.dismiss();
+					success = null;
+				}
 			}
+		}
+		Log.d("MainActivity", location.getLatitude() + " " + location.getLongitude());
+		if(me != null){
+
+			me.setCenter(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()));
 		}
 	}
 
@@ -404,12 +414,39 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 		if(locationClient != null){
 			if(locationClient.isConnected()){
 				locationClient.removeLocationUpdates(this);
+			
 			}
 			locationClient.disconnect();
 		}
+		
 	}
+	
     
-    
-    
+	public double getDistanceFromLatLngInKm(LatLng c1, LatLng c2) {
+		  int R = 6371; // Radius of the earth in km
+		  
+		  double lat1 = c1.latitude;
+		  double lat2 = c2.latitude;
+		  
+		  double lon1 = c1.longitude;
+		  double lon2 = c2.longitude;
+		  
+		  double dLat = deg2rad(lat2-lat1); 
+		  double dLon = deg2rad(lon2-lon1);
+		  
+		  double a = 
+		    Math.sin(dLat/2) * Math.sin(dLat/2) +
+		    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+		    Math.sin(dLon/2) * Math.sin(dLon/2)
+		    ; 
+		  
+		  double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+		  double d = R * c; // Distance in km
+		  return d;
+	}
+	
+	public double deg2rad(double deg) {
+		  return deg * (Math.PI/180);
+	}
     
 }
