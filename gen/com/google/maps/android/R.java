@@ -4,12 +4,13 @@
  * aapt tool from the resource data it found.  It
  * should not be modified by hand.
  */
-package app.akexorcist.googledirectionlibrary;
+package com.google.maps.android;
 
 public final class R {
 	public static final class id {
 		public static final int terrain = 0x7f060003;
 		public static final int satellite = 0x7f060002;
+		public static final int text = 0x7f060014;
 		public static final int monochrome = 0x7f060013;
 		public static final int buyButton = 0x7f06000a;
 		public static final int strict_sandbox = 0x7f060009;
@@ -30,10 +31,13 @@ public final class R {
 		public static final int match_parent = 0x7f06000c;
 	}
 	public static final class style {
-		public static final int WalletFragmentDefaultDetailsTextAppearance = 0x7f080000;
-		public static final int WalletFragmentDefaultButtonTextAppearance = 0x7f080002;
-		public static final int WalletFragmentDefaultDetailsHeaderTextAppearance = 0x7f080001;
+		public static final int Bubble_TextAppearance_Dark = 0x7f080004;
 		public static final int WalletFragmentDefaultStyle = 0x7f080003;
+		public static final int WalletFragmentDefaultDetailsTextAppearance = 0x7f080000;
+		public static final int Bubble_TextAppearance_Light = 0x7f080005;
+		public static final int WalletFragmentDefaultDetailsHeaderTextAppearance = 0x7f080001;
+		public static final int WalletFragmentDefaultButtonTextAppearance = 0x7f080002;
+		public static final int ClusterIcon_TextAppearance = 0x7f080006;
 	}
 	public static final class integer {
 		public static final int google_play_services_version = 0x7f070000;
@@ -101,6 +105,9 @@ public final class R {
 		public static final int common_google_play_services_unsupported_text = 0x7f04001a;
 		public static final int common_google_play_services_enable_text = 0x7f040010;
 	}
+	public static final class layout {
+		public static final int text_bubble = 0x7f030019;
+	}
 	public static final class styleable {
 		public static final int MapAttrs_uiCompass = 6;
 		public static final int WalletFragmentStyle_maskedWalletDetailsHeaderTextAppearance = 5;
@@ -140,26 +147,32 @@ public final class R {
 		public static final int MapAttrs_uiZoomGestures = 11;
 	}
 	public static final class drawable {
+		public static final int bubble_purple = 0x7f02007e;
 		public static final int common_signin_btn_text_disabled_dark = 0x7f020090;
 		public static final int ic_plusone_medium_off_client = 0x7f02009c;
-		public static final int common_signin_btn_icon_focus_light = 0x7f020089;
 		public static final int common_signin_btn_icon_disabled_focus_light = 0x7f020086;
+		public static final int common_signin_btn_icon_focus_light = 0x7f020089;
 		public static final int common_signin_btn_text_disabled_focus_light = 0x7f020092;
+		public static final int bubble_orange = 0x7f02007d;
 		public static final int common_signin_btn_icon_disabled_light = 0x7f020087;
+		public static final int bubble_green = 0x7f02007c;
 		public static final int powered_by_google_dark = 0x7f0200a3;
 		public static final int common_signin_btn_icon_focus_dark = 0x7f020088;
 		public static final int common_signin_btn_text_pressed_light = 0x7f02009a;
 		public static final int ic_plusone_tall_off_client = 0x7f02009f;
+		public static final int bubble_white = 0x7f020080;
 		public static final int common_signin_btn_icon_disabled_focus_dark = 0x7f020085;
 		public static final int common_signin_btn_icon_normal_light = 0x7f02008c;
 		public static final int common_signin_btn_icon_pressed_light = 0x7f02008e;
-		public static final int common_signin_btn_icon_normal_dark = 0x7f02008b;
 		public static final int common_signin_btn_icon_dark = 0x7f020083;
+		public static final int common_signin_btn_icon_normal_dark = 0x7f02008b;
 		public static final int ic_plusone_standard_off_client = 0x7f02009e;
-		public static final int common_signin_btn_text_focus_dark = 0x7f020094;
+		public static final int bubble_red = 0x7f02007f;
 		public static final int common_signin_btn_text_pressed_dark = 0x7f020099;
+		public static final int common_signin_btn_text_focus_dark = 0x7f020094;
 		public static final int common_signin_btn_text_dark = 0x7f02008f;
 		public static final int common_signin_btn_text_disabled_light = 0x7f020093;
+		public static final int bubble_blue = 0x7f02007b;
 		public static final int common_signin_btn_text_focus_light = 0x7f020095;
 		public static final int common_signin_btn_icon_pressed_dark = 0x7f02008d;
 		public static final int common_signin_btn_text_light = 0x7f020096;
@@ -167,8 +180,8 @@ public final class R {
 		public static final int common_signin_btn_icon_light = 0x7f02008a;
 		public static final int common_signin_btn_text_disabled_focus_dark = 0x7f020091;
 		public static final int powered_by_google_light = 0x7f0200a4;
-		public static final int common_signin_btn_icon_disabled_dark = 0x7f020084;
 		public static final int common_signin_btn_text_normal_light = 0x7f020098;
+		public static final int common_signin_btn_icon_disabled_dark = 0x7f020084;
 		public static final int ic_plusone_small_off_client = 0x7f02009d;
 	}
 	public static final class attr {

@@ -21,6 +21,9 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.ui.IconGenerator;
 
 import android.graphics.Color;
 import android.hardware.Sensor;
@@ -58,6 +61,12 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 	private GoogleDirection googleDirection;
 	
 	private Document document;
+	
+	private Polyline target_polyline;
+	
+	private Polyline current_polyline;
+	
+	private String mode ;
 	
     // Milliseconds per second
     private static final int MILLISECONDS_PER_SECOND = 1000;
@@ -102,15 +111,44 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 		switch(item.getItemId()){
 		case R.id.action_directions: 
 			if( targetMark != null  ){
-				googleDirection.setLogging(true);
+/*				googleDirection.setLogging(true);
 				googleDirection.request(new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()), targetMark.getPosition(), GoogleDirection.MODE_DRIVING);
+				
+				*/
+				
+				AlertDialog.Builder builder = new AlertDialog.Builder(this);
+				builder.setItems(new CharSequence[]{"Walking","Driving"}, new DialogInterface.OnClickListener(){
+
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						// TODO Auto-generated method stub
+						googleDirection.setLogging(true);
+						switch(which){
+						case 0 : mode = GoogleDirection.MODE_WALKING;
+						googleDirection.request(new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()), targetMark.getPosition(), mode);
+						break;
+						case 1 : mode = GoogleDirection.MODE_DRIVING;
+						googleDirection.request(new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()), targetMark.getPosition(), mode);
+						break;
+						}
+						dialog.dismiss();
+					}
+					
+				});
+				builder.create().show();
+				
 			}else{
 				Toast.makeText(this, "Oops!, you should find a target first", Toast.LENGTH_SHORT).show();
 			}
 			break;
 		case R.id.action_edit: map.clear();
 			if(me != null){
+
 				me.setCenter(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()));
+				me.setFillColor(Color.BLUE);
+				me.setRadius(10);
+				me.setStrokeColor(Color.WHITE);
+				me.setStrokeWidth(5);
 			}
 			break;
 		case R.id.action_settings: Toast.makeText(this, "No Action Created", Toast.LENGTH_LONG).show();break;
@@ -171,8 +209,15 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 					public void onResponse(String status, Document doc,
 							GoogleDirection gd) {
 						// TODO Auto-generated method stub
-						map.addPolyline(gd.getPolyline(doc, 3, Color.BLUE));
-						map.addCircle(new CircleOptions()
+						if(target_polyline != null){
+							target_polyline.remove();
+						}
+						target_polyline = map.addPolyline(gd.getPolyline(doc, 3, Color.BLUE));
+						
+						target_polyline.setZIndex(4);
+						
+						
+/*						me = map.addCircle(new CircleOptions()
 						.center(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()))
 						.radius(20)
 						.fillColor(Color.BLUE)
@@ -180,7 +225,7 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 						.strokeWidth(20));
 						
 						targetMark = map.addMarker(new MarkerOptions()
-						.position(targetMark.getPosition()));
+						.position(targetMark.getPosition()));*/
 					}
 					
 				});
@@ -253,12 +298,22 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 	@Override
 	public void onLocationChanged(Location location) {
 		// TODO Auto-generated method stub
+
 		if(currentLocation.getLatitude() != location.getLatitude() &&
 				currentLocation.getLongitude() != location.getLongitude()){
 			currentLocation = location;
 			Toast.makeText(this, "Location Changed!", Toast.LENGTH_LONG).show();
 			Log.d("MainActivity", location.getLatitude() + " " + location.getLongitude());
 			if(me != null){
+				if(current_polyline == null){
+					current_polyline = map.addPolyline(new PolylineOptions()
+					.add(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()))
+					.color(Color.RED)
+					.width(3)
+					.zIndex(5));
+				}else{
+					current_polyline.getPoints().add(new LatLng(location.getLatitude(), location.getLongitude()));
+				}
 				me.setCenter(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()));
 			}
 		}
@@ -292,7 +347,7 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
              * If no resolution is available, display a dialog to the
              * user with the error.
              */
-            Toast.makeText(this, connectionResult.getErrorCode() + " ", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, connectionResult.getErrorCode() + " Connection Failed.", Toast.LENGTH_SHORT).show();
         }
 	}
 
@@ -308,10 +363,10 @@ import app.akexorcist.gdaplibrary.GoogleDirection.OnDirectionResponseListener;
 		locationClient.requestLocationUpdates(locationRequest, this);
 		 me = map.addCircle(new CircleOptions()
 		.center(new LatLng(currentLocation.getLatitude() , currentLocation.getLongitude()))
-		.radius(20)
+		.radius(10)
 		.fillColor(Color.BLUE)
 		.strokeColor(Color.WHITE)
-		.strokeWidth(20));
+		.strokeWidth(5));
 		
 		
 		Log.d("MainActivity", "Connected");
